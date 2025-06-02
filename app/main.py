@@ -1,4 +1,5 @@
 from config import SECRET_KEY, logger, ALLOWED_EXTENSIONS
+from api import api
 from dependencies import Session
 from schemas import UserSchema, validate
 from authentication import check_password
@@ -27,10 +28,12 @@ from functions.functions_main import (
     get_file,
     add_user,
     reading_file,
+    add_login_metric,
 )
 
 
 app = Flask(__name__)
+app.register_blueprint(api, url_prefix="/api/v1")
 app.secret_key = SECRET_KEY
 
 login_manager = LoginManager()
@@ -62,6 +65,8 @@ def root():
 @app.route("/login/", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
+        # Добавление метрики входа
+        add_login_metric(user_id=current_user.id)
         return redirect(url_for("download_file"))
 
     if request.method == "POST":
@@ -78,7 +83,9 @@ def login():
                 if user and check_password(password, user.password):
                     rm = True if request.form.get("remember-me") else False
                     login_user(user, remember=rm)
-                    return redirect(url_for("download_file"))
+                    
+                    # Добавление метрики входа
+                    add_login_metric(user_id=user.id)
                 else:
                     flash("Email или пароль не верные.")
                     return redirect(request.url)
@@ -137,7 +144,7 @@ def download_file():
             flash("Не удалось прочитать файл.")
             return redirect(request.url)
 
-        uploaded_file = request.files.get('file')
+        uploaded_file = request.files.get("file")
 
         if uploaded_file.filename == "":
             flash("Файл отсутсвует")
@@ -184,7 +191,7 @@ def tf_idf():
         else:
             logger.error("Файл ")
             flash("У вас нет такого файла, попробуйте загрузить снова.")
-            return redirect(url_for("donwload_file"))
+            return redirect(url_for("download_file"))
 
     except Exception as e:
         logger.error(

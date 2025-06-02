@@ -3,7 +3,7 @@ import pandas as pd
 import PyPDF2
 from flask import request
 from typing import Tuple
-from models import User, Sorted_Tfidf
+from models import User, Sorted_Tfidf, LoginMetric
 from config import ALLOWED_EXTENSIONS, logger
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -128,8 +128,8 @@ def reading_file(file):
     try:
         if file_extension == "docx":
             doc = Document(file)
-            data = [para.text for para in doc.paragraphs]
-            return data
+            text = [para.text for para in doc.paragraphs]
+            return text
 
         elif file_extension == "txt":
             text = file.read().decode("utf-8")
@@ -141,3 +141,11 @@ def reading_file(file):
             return text
     except Exception as e:
         logger.error(f"Ошибка {e}")
+
+def add_login_metric(user_id: int):
+    try:
+        login_metric = LoginMetric(user_id=user_id)
+        request.db_session.add(login_metric)
+        request.db_session.commit()
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка добавления метрики входа: {e}")
