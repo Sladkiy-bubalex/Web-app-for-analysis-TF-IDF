@@ -1,5 +1,20 @@
 # CHANGELOG
 
+
+## [UNRELEASED]
+
+### Feat
+- feat(database): Added database schema
+- feat(api): Adding endpoints for login, registration and logout
+- feat(api): Adding endpoints for working with document(s) and statistics for documents
+- feat(api): Adding endpoints with collections and statistics for collections
+- feat(api): Adding endpoints for working with user
+
+## [1.2.1] - 2025-06-03
+
+### Fix
+- fix(container): change container access policy
+
 ## [1.2.0] - 2025-06-02
 
 ### Feat
