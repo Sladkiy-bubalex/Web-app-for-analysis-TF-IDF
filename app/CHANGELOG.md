@@ -10,6 +10,12 @@
 - feat(api): Adding endpoints with collections and statistics for collections
 - feat(api): Adding endpoints for working with user
 
+
+## [1.2.2] - 2025-06-03
+
+### Fix
+- fix(container): changing the name of docker-compose and dockerfile files
+
 ## [1.2.1] - 2025-06-03
 
 ### Fix
