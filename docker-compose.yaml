@@ -32,7 +32,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./.env:/app/.env
+      - ./home/ubuntu/Web-app-for-analysis-TF-IDF/.env:/app/.env
     depends_on:
       - postgres
     networks:
