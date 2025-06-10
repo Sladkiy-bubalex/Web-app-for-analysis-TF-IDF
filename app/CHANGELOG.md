@@ -9,6 +9,11 @@
 - feat(api): Adding endpoints with collections and statistics for collections
 - feat(api): Adding endpoints for working with user
 
+## [1.3.4] - 2025-06-10
+
+### Fix
+- fix(structure): Removing relative imports
+
 ## [1.3.3] - 2025-06-10
 
 ### Fix

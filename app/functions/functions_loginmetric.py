@@ -1,5 +1,5 @@
-from ..models import LoginMetric
-from ..config import logger
+from models import LoginMetric
+from config import logger
 
 from flask import request
 
