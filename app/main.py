@@ -1,22 +1,22 @@
 import os
 
-from app.config import SECRET_KEY, logger, ALLOWED_EXTENSIONS
-from app.dependencies import Session
-from app.schemas import UserSchema, validate
-from app.authentication import check_password
-from app.models import User
-from app.functions.functions_loginmetric import add_login_metric
-from app.functions.functions_main import (
+from config import SECRET_KEY, logger, ALLOWED_EXTENSIONS
+from dependencies import Session
+from schemas import UserSchema, validate
+from authentication import check_password
+from models import User
+from functions.functions_loginmetric import add_login_metric
+from functions.functions_main import (
     check_extension_file,
     pagination
 )
-from app.functions.functions_document import (
+from functions.functions_document import (
     process_text,
     add_document,
     get_document_user_by_id,
     reading_file
 )
-from app.functions.functions_user import(
+from functions.functions_user import(
     get_user_by_email,
     add_user
 )

@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Tuple
-from app.config import ALLOWED_EXTENSIONS, logger
+from ..config import ALLOWED_EXTENSIONS, logger
 
 
 def check_extension_file(filename: str) -> bool: 

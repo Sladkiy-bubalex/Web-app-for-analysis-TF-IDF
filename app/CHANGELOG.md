@@ -9,11 +9,15 @@
 - feat(api): Adding endpoints with collections and statistics for collections
 - feat(api): Adding endpoints for working with user
 
+## [1.3.3] - 2025-06-10
+
+### Fix
+- fix(import): Changing module imports
+
 ## [1.3.2] - 2025-06-10
 
 ### Fix
 - fix(container): Changing volume mount in web container
-
 
 ## [1.3.1] - 2025-06-10
 

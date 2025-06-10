@@ -1,6 +1,6 @@
-from app.models import User
-from app.config import logger
-from app.authentication import hash_password
+from ..models import User
+from ..config import logger
+from ..authentication import hash_password
 
 from flask import request
 

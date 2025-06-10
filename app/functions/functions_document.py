@@ -1,7 +1,7 @@
 import pandas as pd
 
-from app.config import logger
-from app.models import Document
+from ..config import logger
+from ..models import Document
 
 from flask import request
 from werkzeug.datastructures import FileStorage

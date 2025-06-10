@@ -1,5 +1,5 @@
-from app.models import Collection, DocumentCollectionAssociation
-from app.config import logger
+from ..models import Collection, DocumentCollectionAssociation
+from ..config import logger
 from flask import request
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
