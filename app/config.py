@@ -1,6 +1,7 @@
 import logging
 import dotenv
 import os
+import nltk
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -11,4 +12,9 @@ dotenv.load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALLOWED_EXTENSIONS = ["txt", "pdf", "docx"]
-APP_VERSION = "1.2.2"
+APP_VERSION = "1.3.0"
+
+# Скачать необходимые данные для работы с NLTK
+nltk.download("punkt")
+nltk.download("stopwords")
+nltk.download("punkt_tab")

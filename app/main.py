@@ -1,9 +1,28 @@
-from config import SECRET_KEY, logger, ALLOWED_EXTENSIONS
-from api import api
-from dependencies import Session
-from schemas import UserSchema, validate
-from authentication import check_password
-from models import User
+import os
+
+from app.config import SECRET_KEY, logger, ALLOWED_EXTENSIONS
+from app.dependencies import Session
+from app.schemas import UserSchema, validate
+from app.authentication import check_password
+from app.models import User
+from app.functions.functions_loginmetric import add_login_metric
+from app.functions.functions_main import (
+    check_extension_file,
+    pagination
+)
+from app.functions.functions_document import (
+    process_text,
+    add_document,
+    get_document_user_by_id,
+    reading_file
+)
+from app.functions.functions_user import(
+    get_user_by_email,
+    add_user
+)
+
+from sqlalchemy.exc import IntegrityError
+
 from flask_login import (
     login_user,
     logout_user,
@@ -19,21 +38,9 @@ from flask import (
     Response,
     url_for
 )
-from functions.functions_main import (
-    check_extension_file,
-    process_text,
-    pagination,
-    get_user,
-    add_data_tf_idf,
-    get_file,
-    add_user,
-    reading_file,
-    add_login_metric,
-)
 
 
 app = Flask(__name__)
-app.register_blueprint(api, url_prefix="/api/v1")
 app.secret_key = SECRET_KEY
 
 login_manager = LoginManager()
@@ -70,17 +77,11 @@ def login():
         return redirect(url_for("download_file"))
 
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        check_data = validate(
-            schema_cls=UserSchema,
-            email=email,
-            password=password
-        )
-        if isinstance(check_data, UserSchema):
+        validation_data = validate(schema_cls=UserSchema, **request.form)
+        if isinstance(validation_data, UserSchema):
             try:
-                user = get_user(email=email)
-                if user and check_password(password, user.password):
+                user = get_user_by_email(email=validation_data.email)
+                if user and check_password(validation_data.password, user.password):
                     rm = True if request.form.get("remember-me") else False
                     login_user(user, remember=rm)
                     
@@ -100,17 +101,11 @@ def login():
 @app.route("/register/", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        check_data = validate(
-            schema_cls=UserSchema,
-            email=email,
-            password=password
-        )
-        if isinstance(check_data, UserSchema):
+        validation_data = validate(schema_cls=UserSchema, **request.form)
+        if isinstance(validation_data, UserSchema):
             try:
-                if get_user(email=email) is False:
-                    user = add_user(email=email, password=password)
+                if get_user_by_email(email=validation_data.email) is False:
+                    user = add_user(email=validation_data.email, password=validation_data.password)
                     rm = True if request.form.get("remember-me") else False
                     login_user(user, remember=rm)
                     return redirect(url_for("download_file"))
@@ -118,14 +113,14 @@ def register():
                     flash("Пользователь с таким email уже существует.")
                     return redirect(request.url)
             except Exception as e:
-                logger.error(f'Ошибка регистрации пользователя {email}: {e}')
+                logger.error(f'Ошибка регистрации пользователя {validation_data.email}: {e}')
                 flash("Произошла ошибка регистрации, попробуйте позже.")
                 return redirect(request.url)
 
         elif (
-            check_data[0]["type"] == "value_error"
+            validation_data[0]["type"] == "value_error"
         ):  # Дополнительное информирования о длинне пароля.
-            flash(check_data[0]["msg"].split(",")[1])
+            flash(validation_data[0]["msg"].split(",")[1])
             return redirect(request.url)
 
         else:
@@ -153,10 +148,14 @@ def download_file():
         if uploaded_file and check_extension_file(uploaded_file.filename):
             text = reading_file(file=uploaded_file)
             try:
-                add_file = add_data_tf_idf(
+                file = add_document(
                     name_file=uploaded_file.filename, text=text, user_id=current_user.id
                 )
-                return redirect(f"/tf_idf/?file_id={add_file.id}")
+                return redirect(f"/tf_idf/{file.id}")
+
+            except IntegrityError as e:
+                flash("Файл с таким названием уже существует.")
+                return redirect(request.url)
             except Exception as e:
                 logger.error(
                     f"Ошибка при обработке файла: {uploaded_file.filename} : {e}."
@@ -171,25 +170,19 @@ def download_file():
     return render_template("download.html", extensions=ALLOWED_EXTENSIONS)
 
 
-@app.route("/tf_idf/", methods=["GET"])
+@app.route("/tf_idf/<int:file_id>", methods=["GET"])
 @login_required
-def tf_idf():
-    file_id = request.args.get("file_id")
-    if file_id is None:
-        flash("Файл не загружен.")
-        return redirect(url_for("download_file"))
-
+def tf_idf(file_id: int):
     try:
-        file = get_file(file_id=file_id)
+        file = get_document_user_by_id(user_id=current_user.id, document_id=file_id)
         if file:
             df_file = process_text(file.data)
             page = request.args.get("page", 1, type=int)
             items, total_pages = pagination(data_frame=df_file, page=page)
             return render_template(
-                "result.html", items=items, total_pages=total_pages, page=page
+                "result.html", items=items, total_pages=total_pages, page=page, file_id=file_id
             )
         else:
-            logger.error("Файл ")
             flash("У вас нет такого файла, попробуйте загрузить снова.")
             return redirect(url_for("download_file"))
 
@@ -209,4 +202,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host=os.getenv("FLASK_APP_HOST"), port=os.getenv("FLASK_APP_PORT"))

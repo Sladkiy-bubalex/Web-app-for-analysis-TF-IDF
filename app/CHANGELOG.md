@@ -4,22 +4,32 @@
 ## [UNRELEASED]
 
 ### Feat
-- feat(database): Added database schema
 - feat(api): Adding endpoints for login, registration and logout
 - feat(api): Adding endpoints for working with document(s) and statistics for documents
 - feat(api): Adding endpoints with collections and statistics for collections
 - feat(api): Adding endpoints for working with user
 
+## [1.3.0] - 2025-06-10
+
+### Feat
+- feat(database): Changing the database structure and relationships between models, adding a new "collection" model
+- feat(web): Improving the logic of data validation during registration and authorization
+- feat(database): Added database [schema](Schema_db.drawio.png) 
+
+### Fix
+- fix(web): Incorrect logic for outputting information on the document was detected. Previously, the TF-IDF value was output in the IDF column, changing the calculation logic
+- fix(web): Adding a check and informing about the uniqueness of the document name
+- fix(structure): Distribution of functions for working with models in the database, according to logical files
 
 ## [1.2.2] - 2025-06-03
 
 ### Fix
-- fix(container): changing the name of docker-compose and dockerfile files
+- fix(container): Changing the name of docker-compose and dockerfile files
 
 ## [1.2.1] - 2025-06-03
 
 ### Fix
-- fix(container): change container access policy
+- fix(container): Change container access policy
 
 ## [1.2.0] - 2025-06-02
 
