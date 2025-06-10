@@ -28,7 +28,7 @@ services:
   
   app:
     build: .
-    command: bash -c "alembic upgrade head && python main.py"
+    command: bash -c "alembic upgrade heads && python main.py"
     env_file:
       - .env
     volumes:

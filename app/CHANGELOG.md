@@ -9,6 +9,11 @@
 - feat(api): Adding endpoints with collections and statistics for collections
 - feat(api): Adding endpoints for working with user
 
+## [1.3.1] - 2025-06-10
+
+### Fix
+- fix(api): Fixing the logic of the ```alembic upgrade``` command
+
 ## [1.3.0] - 2025-06-10
 
 ### Feat
