@@ -1,0 +1,1087 @@
+openapi: "3.0.0"
+info:
+  title: API для вычисление TF-IDF
+  version: 1.0.0
+paths:
+  /api/v1/status/:
+    get:
+      tags:
+        - Status
+      operationId: Получение статуса API
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/metrics/:
+    get:
+      tags:
+        - Metrics
+      operationId: Получение метрик
+      description: Возвращает метрики пользователей и файлов
+      security:
+        - jwt: []
+      headers:
+        Authorization:
+          type: string
+          description: JWT-токен авторизации
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metrics'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/version/:
+    get:
+      tags:
+        - Version
+      operationId: Получение версии API
+      description: Возвращает версию API
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+        500:
+          description: Ошибка сервера
+
+  /api/v1/register/:
+    post:
+      tags:
+        - Auth
+      operationId: Регистрация пользователя
+      description: Регистрирует нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSchemaRequest'
+      responses:
+        201:
+          description: Успешная регистрация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSchemaResponse'
+        400:
+          description: Ошибка валидации данных или пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/login/:
+    post:
+      tags:
+        - Auth
+      operationId: Авторизация пользователя
+      description: Авторизует пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSchemaRequest'
+      responses:
+        200:
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSchemaResponse'
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/refresh-token/:
+    post:
+      tags:
+        - Auth
+      operationId: Обновление токена
+      description: Обновляет токен
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenSchemaRequest'
+      responses:
+        200:
+          description: Успешное обновление токена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/user/:
+    get:
+      tags:
+        - User
+      operationId: Получение данных пользователя
+      description: Получает данные пользователя по ID полученному из JWT токена
+      security:
+        - jwt: []
+      headers:
+        Authorization:
+          type: string
+          description: JWT-токен авторизации
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGetSchemaResponse'
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+        - User
+      operationId: Обновление данных пользователя
+      description: Обновляет данные пользователя по ID полученному из JWT токена
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserSchemaRequest'
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User updated successfully"
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - User
+      operationId: Удаление данных пользователя
+      description: Удаляет пользователя по ID полученному из JWT токена
+      security:
+        - jwt: []
+      responses:
+        204:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/upload_document/:
+    post:
+      tags:
+        - Document
+      operationId: Загрузка документа
+      description: Загружает документ для обработки
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Document uploaded successfully"
+        400:
+          description: Не корректный файл
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: Файл уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/documents/:
+    get:
+      tags:
+        - Document
+      operationId: Получение списка документов
+      description: Получает список документов
+      security:
+        - jwt: []
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentGetSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документы не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/documents/{document_id}:
+    get:
+      tags:
+        - Document
+      operationId: Получение документа
+      description: Получает документ по ID
+      security:
+        - jwt: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentGetSchemaResponse'
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+        - Document
+      operationId: Обновление документа
+      description: Обновляет документ по ID
+      security:
+        - jwt: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentSchemaRequest'
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Document updated successfully"
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Document
+      operationId: Удаление документа
+      description: Удаляет документ по ID
+      security:
+        - jwt: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Document deleted successfully"
+        400:
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/documents/{document_id}/statistics:
+    get:
+      tags:
+        - Document
+      operationId: Получение статистики документа в коллекции
+      description: Получает статистику в коллекции по ID документа
+      security:
+        - jwt: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentStatisticsSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ не найден или не находится в коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/collections/:
+    get:
+      tags:
+        - Collection
+      operationId: Получение списка коллекций с документами
+      description: Получает список коллекций с документами
+      security:
+        - jwt: []
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionListSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Коллекции не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - Collection
+      operationId: Создание коллекции
+      description: Создает коллекцию
+      security:
+        - jwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionCreateSchemaRequest'
+      responses:
+        201:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  message:
+                    type: string
+                    example: "Collection created successfully"
+
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: Коллекция с таким название уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/collections/{collection_id}:
+    get:
+      tags:
+        - Collection
+      operationId: Получение данных коллекции
+      description: Получает данные коллекции по ID
+      security:
+        - jwt: []
+      parameters:
+        - name: collection_id
+          in: path
+          required: true
+          description: ID коллекции
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionGetSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документы в коллекции не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Collection
+      operationId: Удаление коллекции
+      description: Удаляет коллекцию по ID
+      security:
+        - jwt: []
+      parameters:
+        - name: collection_id
+          in: path
+          required: true
+          description: ID коллекции
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Collection deleted successfully"
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документы в коллекции не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/collections/{collection_id}/statistics:
+    get:
+      tags:
+        - Collection
+      operationId: Получение статистики по коллекции
+      description: Получает статистику по ID коллекции
+      security:
+        - jwt: []
+      parameters:
+        - name: collection_id
+          in: path
+          required: true
+          description: ID коллекции
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionStatisticsSchemaResponse'
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документы в коллекции не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/collections/{collection_id}/{document_id}:
+    post:
+      tags:
+        - Collection
+      operationId: Добавление документа в коллекцию
+      description: Добавляет документ в коллекцию
+      security:
+        - jwt: []
+      parameters:
+        - name: collection_id
+          in: path
+          required: true
+          description: ID коллекции
+          schema:
+            type: integer
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Document added to collection successfully"
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ или коллекция по ID не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Collection
+      operationId: Удаление документа из коллекции
+      description: Удаляет документ из коллекции
+      security:
+        - jwt: []
+      parameters:
+        - name: collection_id
+          in: path
+          required: true
+          description: ID коллекции
+          schema:
+            type: integer
+        - name: document_id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: integer
+      responses:
+        204:
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Document deleted from collection successfully"
+        401:
+          description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Документ или коллекция по ID не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'   
+
+components:
+  securitySchemes:
+    jwt:
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+    Metrics:
+      type: object
+      properties:
+        count_reg_users:
+          type: integer
+          description: Количество зарегистрированных пользователей
+          example: 150
+        count_return_users:
+          type: integer
+          description: Количество пользователей вернувшихся на сайт
+          example: 75
+        count_return_users_today:
+          type: integer
+          description: Количество пользователей вернувшихся на сайт сегодня
+          example: 20
+        count_files:
+          type: integer
+          description: Количество загруженных файлов
+          example: 300
+        count_files_today:
+          type: integer
+          description: Количество файлов загруженных сегодня
+          example: 10
+
+    UserSchemaRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "securePassword123"
+      required:
+        - email
+        - password
+
+    UserSchemaResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "Bearer eyJhbGciOiJIUzI1N..."
+        refresh_token:
+          type: string
+          example: "Bearer eyJhbGciOiJIUzI1N..."
+
+    RefreshTokenSchemaRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          example: "Bearer eyJhbGciOiJIUzI1N..."
+      required:
+        - refresh_token
+
+    RefreshTokenSchemaResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "Bearer eyJhbGciOiJIUzI1N..."
+
+    UserGetSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        admin:
+          type: boolean
+          example: false
+
+    UpdateUserSchemaRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "securePassword123"
+
+    DocumentGetSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name_file:
+          type: string
+          example: "file.txt"
+
+    UpdateDocumentSchemaRequest:
+      type: object
+      properties:
+        name_file:
+          type: string
+          example: "file.txt"
+        new_text:
+          type: string
+          example: "data"
+
+    DocumentStatisticsSchemaResponse:
+      type: object
+      properties:
+        collection_id:
+          type: integer
+          example: 1
+        tf_idf_data:
+          type: array
+          items:
+            type: object
+            properties:
+              word:
+                type: string
+                example: "word"
+              tf:
+                type: integer
+                example: 1
+              idf:
+                type: number
+                example: 0.524141414
+                format: float
+
+    CollectionListSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentGetSchemaResponse'
+
+    CollectionGetSchemaResponse:
+      type: object
+      properties:
+        documents_id:
+          type: array
+          items:
+            type: integer
+            example: 1, 2, 3
+
+    CollectionCreateSchemaRequest:
+      type: object
+      properties:
+        name_collection:
+          type: string
+          example: "name collection"
+
+    CollectionStatisticsSchemaResponse:
+      type: array
+      items:
+        properties:
+          word:
+            type: string
+            example: "word"
+          tf:
+            type: integer
+            example: 1
+          idf:
+            type: number
+            example: 0.524141414
+            format: float
+
+
+
+
+
+

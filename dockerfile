@@ -20,5 +20,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY ./app .
 
 EXPOSE 5000
+EXPOSE 5050
 
 CMD ["python", "main.py"]

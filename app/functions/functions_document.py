@@ -179,7 +179,7 @@ def get_document_user_by_id(user_id: int, document_id: int) -> Document | None:
         logger.error(f"Ошибка получения документа: {e}")
         raise e
 
-def update_document(user_id: int, document_id: int, name_file=None, text=None) -> Document:
+def update_document(user_id: int, document_id: int, name_file=None, new_text=None) -> Document:
     """
     Функция для обновления данных документа
     """
@@ -189,7 +189,7 @@ def update_document(user_id: int, document_id: int, name_file=None, text=None) -
             return None
 
         document.name_file = name_file if name_file else document.name_file
-        document.data = text if text else document.data
+        document.data = new_text if new_text else document.data
 
         request.db_session.add(document)
         request.db_session.commit()
@@ -201,7 +201,7 @@ def update_document(user_id: int, document_id: int, name_file=None, text=None) -
         logger.error(f"Ошибка обновления документа: {e}")
         raise e
 
-def delete_document(user_id: int, document_id: int) -> bool:
+def delete_document(user_id: int, document_id: int) -> None | bool:
     """
     Функция для удаления документа
     """

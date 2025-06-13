@@ -1,13 +1,24 @@
 # CHANGELOG
 
-
 ## [UNRELEASED]
 
 ### Feat
-- feat(api): Adding endpoints for login, registration and logout
-- feat(api): Adding endpoints for working with document(s) and statistics for documents
-- feat(api): Adding endpoints with collections and statistics for collections
-- feat(api): Adding endpoints for working with user
+
+- feat(api): Adding endpoint ```api/v1/documents/<document_id>/huffman```
+  
+  - It will return the contents of the document encoded by [Huffman Code](https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%B4_%D0%A5%D0%B0%D1%84%D1%84%D0%BC%D0%B0%D0%BD%D0%B0)
+
+## [1.4.0] - 2025-06-13
+
+### Feat
+- feat(api): Adding API workflow endpoints:
+
+  - Adding endpoints for:
+    - login, registration
+    - working with document(s) and statistics for documents
+    - collections and statistics for collections
+    - working with user
+  - Detailed documentation is available [here](http://37.9.53.222/apidocs)
 
 ## [1.3.4] - 2025-06-10
 
