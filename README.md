@@ -1,5 +1,5 @@
 # Веб-приложение для получения данных tf-idf из текстовых файлов (txt, docx, pdf)
-Версия 1.4.0
+Версия 1.5.0
 
 ## Описание
 
@@ -25,22 +25,37 @@
 ### Установка на виртуальной машине (Linux)
 
 - Установить [Git](https://git-scm.com/book/ru/v2/%D0%92%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5-%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-Git)
+
 - Установить [Docker](https://docs.docker.com/engine/install/ubuntu/)
+
 - Установить [Docker Compose](https://docs.docker.com/desktop/setup/install/linux/)
+
+- Для работы приложения необходимо иметь SSL-сертификат и приватный ключ:
+  - Скопировать их в директорию ```.etc/ssl/certs/your_cert.crt``` и ```.etc/ssl/private/your_private.key``` соответственно
+
+- Получение доменного имени для сайта:
+  - Если вы не хотите зарегистрировать доменное имя для сайта, то в файле ```default.conf``` в разделе ```server_name``` укажите IP-адрес в формате ```server_name your_ip_address;```
+  - Если вы хотите, то в файле ```default.conf``` в соответствующем разделе укажите доменное имя
+
 - Клонировать репозитерий ```git clone https://github.com/Sladkiy-bubalex/Web-app-for-analysis-TF-IDF.git```
+
 - Перейти в директорию ```cd ./Web-app-for-analysis-TF-IDF/```
+
 - Создать файл ```.env```:
   - В файле ```.env``` задать переменные для создания БД:
     - ```POSTGRES_DB```
     - ```POSTGRES_USER```
     - ```POSTGRES_PASSWORD```
+
   - Cгенерировать [секретный ключ](https://docs-python.ru/standart-library/modul-secrets-python/) и внести его в переменную ```SECRET_KEY```
-  - Аналогичным образом выше, сгененрировать ключ и внести его в переменную ```JWT_SECRET_KEY```
+
+  - Аналогичным образом сгенерировать ключ и внести его в переменную ```JWT_SECRET_KEY```
   - Задать переменные:
     - ```FLASK_APP_PORT=5000```
     - ```FLASK_APP_HOST=0.0.0.0```
     - ```FLASK_API_PORT=5050```
     - ```FLASK_API_HOST=0.0.0.0```
+
 - В командной строке запустить ```docker-compose up -d```
 
 ## Структура проекта

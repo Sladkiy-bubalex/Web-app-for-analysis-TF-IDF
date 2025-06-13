@@ -13,7 +13,7 @@ dotenv.load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALLOWED_EXTENSIONS = ["txt", "pdf", "docx"]
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 
 # Скачать необходимые данные для работы с NLTK
 nltk.download("punkt")
