@@ -8,6 +8,13 @@
   
   - It will return the contents of the document encoded by [Huffman Code](https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%B4_%D0%A5%D0%B0%D1%84%D1%84%D0%BC%D0%B0%D0%BD%D0%B0)
 
+## [2.0.1] - 2025-06-14
+
+### Fix
+- fix(web): Fixing the logic of the ```login``` endpoint
+
+Fixed re-transition to the authorization page and validation of user data during registration and authorization with the "remember me" flag
+
 ## [2.0.0] - 2025-06-14
 
 ### Feat

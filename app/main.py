@@ -77,7 +77,10 @@ def login():
         return redirect(url_for("download_file"))
 
     if request.method == "POST":
-        validation_data = validate(schema_cls=UserSchema, **request.form)
+        logger.info(f"Получены данные для входа: {request.form}")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        validation_data = validate(schema_cls=UserSchema, email=email, password=password)
         if isinstance(validation_data, UserSchema):
             try:
                 user = get_user_by_email(email=validation_data.email)
@@ -87,6 +90,7 @@ def login():
                     
                     # Добавление метрики входа
                     add_login_metric(user_id=user.id)
+                    return redirect(url_for("download_file"))
                 else:
                     flash("Email или пароль не верные.")
                     return redirect(request.url)
@@ -101,7 +105,10 @@ def login():
 @app.route("/register/", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        validation_data = validate(schema_cls=UserSchema, **request.form)
+        logger.info(f"Получены данные для регистрации: {request.form}")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        validation_data = validate(schema_cls=UserSchema, email=email, password=password)
         if isinstance(validation_data, UserSchema):
             try:
                 if get_user_by_email(email=validation_data.email) is False:
