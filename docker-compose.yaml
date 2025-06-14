@@ -66,7 +66,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /etc/ssl/certs/my_cert.crt:/etc/ssl/certs/my_cert.crt
+      - /etc/ssl/private/my_private.key:/etc/ssl/private/my_private.key
     depends_on:
       - app
       - api

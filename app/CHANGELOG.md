@@ -8,6 +8,15 @@
   
   - It will return the contents of the document encoded by [Huffman Code](https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%B4_%D0%A5%D0%B0%D1%84%D1%84%D0%BC%D0%B0%D0%BD%D0%B0)
 
+## [2.0.0] - 2025-06-14
+
+### Feat
+- feat(app): Adding certificate and key forwarding lines in nginx container
+- feat(app): Replacing default.conf with nginx.conf with standard settings and throttling settings
+
+### BREAKING CHANGE
+- Now the application is available at https://tf-idf.ru/, documentation for the API https://tf-idf.ru/apidocs
+
 ## [1.5.0] - 2025-06-13
 
 ### Feat
