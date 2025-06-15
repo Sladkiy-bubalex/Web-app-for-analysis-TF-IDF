@@ -1,12 +1,17 @@
 # CHANGELOG
 
-## [UNRELEASED]
+## [2.1.0] - 2025-06-15
 
 ### Feat
 
 - feat(api): Adding endpoint ```api/v1/documents/<document_id>/huffman```
   
   - It will return the contents of the document encoded by [Huffman Code](https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%B4_%D0%A5%D0%B0%D1%84%D1%84%D0%BC%D0%B0%D0%BD%D0%B0)
+
+### Fix
+
+- fix(structure): Bringing code into compliance with PEP8
+- fix(functions): Changing the logic of data preprocessing in the function ```reading_file``` 
 
 ## [2.0.1] - 2025-06-14
 

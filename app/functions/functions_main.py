@@ -3,7 +3,7 @@ from typing import Tuple
 from config import ALLOWED_EXTENSIONS, logger
 
 
-def check_extension_file(filename: str) -> bool: 
+def check_extension_file(filename: str) -> bool:
     """
     Функция для проверки расширения
     """
@@ -15,6 +15,7 @@ def check_extension_file(filename: str) -> bool:
     except Exception as e:
         logger.error(f"Ошибка обработки названия файла: {filename}")
         raise e
+
 
 def pagination(
         data_frame: pd.DataFrame, page: int

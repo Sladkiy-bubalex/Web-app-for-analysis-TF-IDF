@@ -24,6 +24,7 @@ def get_user_by_email(email: str) -> User | bool:
         logger.error(f"Ошибка получения юзера из БД по email: {email}")
         raise e
 
+
 def get_user_by_id(user_id: int) -> User | bool:
     """
     Функция для получения юзера из БД по id
@@ -37,6 +38,7 @@ def get_user_by_id(user_id: int) -> User | bool:
     except SQLAlchemyError as e:
         logger.error(f"Ошибка получения юзера из БД по id: {user_id}")
         raise e
+
 
 def update_user(user_id: int, email=None, password=None) -> User | bool:
     """
@@ -60,6 +62,7 @@ def update_user(user_id: int, email=None, password=None) -> User | bool:
         request.db_session.rollback()
         logger.error(f"Ошибка обновления юзера в БД по id: {user_id}")
         raise e
+
 
 def add_user(email: str, password: str) -> User:
     """

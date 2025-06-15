@@ -16,7 +16,7 @@ from functions.functions_document import (
     get_document_user_by_id,
     reading_file
 )
-from functions.functions_user import(
+from functions.functions_user import (
     get_user_by_email,
     add_user
 )
@@ -80,14 +80,21 @@ def login():
         logger.info(f"Получены данные для входа: {request.form}")
         email = request.form.get("email")
         password = request.form.get("password")
-        validation_data = validate(schema_cls=UserSchema, email=email, password=password)
+        validation_data = validate(
+            schema_cls=UserSchema,
+            email=email,
+            password=password
+        )
         if isinstance(validation_data, UserSchema):
             try:
                 user = get_user_by_email(email=validation_data.email)
-                if user and check_password(validation_data.password, user.password):
+                if user and check_password(
+                    password=validation_data.password,
+                    hashed_password=user.password
+                ):
                     rm = True if request.form.get("remember-me") else False
                     login_user(user, remember=rm)
-                    
+
                     # Добавление метрики входа
                     add_login_metric(user_id=user.id)
                     return redirect(url_for("download_file"))
@@ -108,11 +115,18 @@ def register():
         logger.info(f"Получены данные для регистрации: {request.form}")
         email = request.form.get("email")
         password = request.form.get("password")
-        validation_data = validate(schema_cls=UserSchema, email=email, password=password)
+        validation_data = validate(
+            schema_cls=UserSchema,
+            email=email,
+            password=password
+        )
         if isinstance(validation_data, UserSchema):
             try:
                 if get_user_by_email(email=validation_data.email) is False:
-                    user = add_user(email=validation_data.email, password=validation_data.password)
+                    user = add_user(
+                        email=validation_data.email,
+                        password=validation_data.password
+                    )
                     rm = True if request.form.get("remember-me") else False
                     login_user(user, remember=rm)
                     return redirect(url_for("download_file"))
@@ -120,7 +134,9 @@ def register():
                     flash("Пользователь с таким email уже существует.")
                     return redirect(request.url)
             except Exception as e:
-                logger.error(f'Ошибка регистрации пользователя {validation_data.email}: {e}')
+                logger.error(
+                    f"Ошибка регистрации пользователя"
+                    f"{validation_data.email}: {e}")
                 flash("Произошла ошибка регистрации, попробуйте позже.")
                 return redirect(request.url)
 
@@ -156,16 +172,19 @@ def download_file():
             text = reading_file(file=uploaded_file)
             try:
                 file = add_document(
-                    name_file=uploaded_file.filename, text=text, user_id=current_user.id
+                    name_file=uploaded_file.filename,
+                    text=text,
+                    user_id=current_user.id
                 )
                 return redirect(f"/tf_idf/{file.id}")
 
-            except IntegrityError as e:
+            except IntegrityError:
                 flash("Файл с таким названием уже существует.")
                 return redirect(request.url)
             except Exception as e:
                 logger.error(
-                    f"Ошибка при обработке файла: {uploaded_file.filename} : {e}."
+                    f"Ошибка при обработке файла:"
+                    f"{uploaded_file.filename} : {e}."
                 )
                 flash("Произошла ошибка обработки файла, повторите попытку.")
                 return redirect(request.url)
@@ -181,13 +200,20 @@ def download_file():
 @login_required
 def tf_idf(file_id: int):
     try:
-        file = get_document_user_by_id(user_id=current_user.id, document_id=file_id)
+        file = get_document_user_by_id(
+            user_id=current_user.id,
+            document_id=file_id
+        )
         if file:
             df_file = process_text(file.data)
             page = request.args.get("page", 1, type=int)
             items, total_pages = pagination(data_frame=df_file, page=page)
             return render_template(
-                "result.html", items=items, total_pages=total_pages, page=page, file_id=file_id
+                "result.html",
+                items=items,
+                total_pages=total_pages,
+                page=page,
+                file_id=file_id
             )
         else:
             flash("У вас нет такого файла, попробуйте загрузить снова.")

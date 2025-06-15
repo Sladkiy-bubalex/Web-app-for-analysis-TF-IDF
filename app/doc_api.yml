@@ -589,6 +589,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/v1/documents/{document_id}/huffman:
+      get:
+        tags:
+          - Document
+        operationId: Получение документа закодированного кодом Хаффмана
+        description: Получает документ закодированный кодом Хаффмана по ID
+        security:
+          - jwt: []
+        parameters:
+          - name: document_id
+            in: path
+            required: true
+            description: ID документа
+            schema:
+              type: integer
+        responses:
+          200:
+            description: Успешный ответ
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DocumentHuffmanSchemaResponse'
+          401:
+            description: Неавторизованный доступ (JWT не предоставлен или недействителен)
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          404:
+            description: Данные документа не найдены
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          500:
+            description: Ошибка сервера
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+
   /api/v1/collections/:
     get:
       tags:
@@ -1037,6 +1078,16 @@ components:
                 type: number
                 example: 0.524141414
                 format: float
+
+    DocumentHuffmanSchemaResponse:
+      type: object
+      properties:
+        encoded_data:
+          type: string
+          example: "0011001010110110110100010101..."
+        code_table:
+          type: object
+          example: {"code_table": {"word1": "0110", "word2": "1110", "word3": "1111"}}
 
     CollectionListSchemaResponse:
       type: object

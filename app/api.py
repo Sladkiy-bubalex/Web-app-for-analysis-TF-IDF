@@ -12,6 +12,7 @@ from flask_jwt_extended import (
     JWTManager
 )
 
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -32,7 +33,7 @@ from models import (
     LoginMetric,
     User,
     Document,
-    DocumentCollectionAssociation,
+    DocumentCollectionAssociation as DocCollAssoc,
     Collection
 )
 from schemas import (
@@ -53,7 +54,8 @@ from functions.functions_document import (
     add_document,
     reading_file,
     update_document,
-    delete_document
+    delete_document,
+    huffman_encode
 )
 from functions.functions_user import (
     get_user_by_email,
@@ -62,19 +64,17 @@ from functions.functions_user import (
     update_user
 )
 
-from sqlalchemy import func
-from sqlalchemy.exc import SQLAlchemyError
-
 from datetime import datetime, time, timedelta
 
 
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 app.config["SWAGGER"] = {"openapi": "3.0.0"}
-API_VERSION_URL_PREFIX_V1 = f"/api/v1"
+API_VERSION_URL_PREFIX_V1 = "/api/v1"
 
 swagger = Swagger(app, template_file="doc_api.yml")
 jwt = JWTManager(app)
+
 
 @app.errorhandler(HttpError)
 def error_headler(err: HttpError):
@@ -110,9 +110,10 @@ class BaseView(MethodView):
         # Обработка ошибок валидации
         raise HttpError(
             400,
-            f"{error_validation_data[0]["loc"][0]}: {error_validation_data[0]["msg"]}"
+            f"{error_validation_data[0]["loc"][0]}:"
+            f"{error_validation_data[0]["msg"]}"
         )
-    
+
     def handle_error(
         self,
         error: type(Exception),
@@ -120,7 +121,6 @@ class BaseView(MethodView):
         status_code: int
     ) -> HttpError:
         raise HttpError(status_code, message)
-        
 
 
 class StatusView(MethodView):
@@ -218,7 +218,10 @@ class RegistrationView(BaseView):
                     }), 201
 
                 else:
-                    logger.error(f"Пользователь с таким email уже существует: {validation_data.email}")
+                    logger.error(
+                        f"Пользователь с таким email уже существует:"
+                        f"{validation_data.email}"
+                    )
                     raise HttpError(400, "User already exists")
 
             except SQLAlchemyError as e:
@@ -226,7 +229,9 @@ class RegistrationView(BaseView):
 
         else:
             # Обрабатываем и выдаем сообщения об ошибке пользователю
-            logger.error(f"Ошибка валидации данных регистрации: {validation_data}")
+            logger.error(
+                f"Ошибка валидации данных регистрации: {validation_data}"
+            )
             self.handle_validation_errors(validation_data)
 
 
@@ -242,9 +247,11 @@ class LoginView(BaseView):
             try:
                 user = get_user_by_email(email=validation_data.email)
                 if user is False:
-                    logger.error(f"Пользователь не найден: {validation_data.email}")
+                    logger.error(
+                        f"Пользователь не найден: {validation_data.email}"
+                    )
                     raise HttpError(404, "User not found")
-            
+
                 if check_password(
                     password=validation_data.password,
                     hashed_password=user.password
@@ -258,7 +265,8 @@ class LoginView(BaseView):
                         expires_delta=timedelta(days=7)
                     )
 
-                    add_login_metric(user_id=user.id) # Добавление метрики входа
+                    # Добавление метрики входа
+                    add_login_metric(user_id=user.id)
 
                     return jsonify({
                         "access_token": f"Bearer {access_token}",
@@ -266,7 +274,9 @@ class LoginView(BaseView):
                     }), 200
 
                 else:
-                    logger.error(f"Неверный пароль: {validation_data.password}")
+                    logger.error(
+                        f"Неверный пароль: {validation_data.password}"
+                    )
                     raise HttpError(401, "Invalid password")
 
             except SQLAlchemyError as e:
@@ -274,7 +284,9 @@ class LoginView(BaseView):
 
         else:
             # Обрабатываем и выдаем сообщения об ошибке пользователю
-            logger.error(f"Ошибка валидации данных авторизации: {validation_data}")
+            logger.error(
+                f"Ошибка валидации данных авторизации: {validation_data}"
+            )
             self.handle_validation_errors(validation_data)
 
 
@@ -325,10 +337,13 @@ class UserView(BaseView):
                 f"от пользователя: {self.user_id}"
             )
             self.handle_validation_errors(validation_data)
-    
+
     @jwt_required()
     def patch(self):
-        logger.info(f"Пользователь {self.user_id} отправил данные {request.json}")
+        logger.info(
+            f"Пользователь {self.user_id}"
+            f"отправил данные {request.json}"
+        )
         validation_data = validate(UpdateUserSchema, **request.json)
 
         if isinstance(validation_data, UpdateUserSchema):
@@ -350,7 +365,7 @@ class UserView(BaseView):
             # Обрабатываем и выдаем сообщения об ошибке пользователю
             logger.error(f"Ошибка валидации данных {validation_data}")
             self.handle_validation_errors(validation_data)
-    
+
     @jwt_required()
     def delete(self):
         try:
@@ -358,7 +373,7 @@ class UserView(BaseView):
             if user is False:
                 logger.error(f"Пользователь {self.user_id} не найден")
                 raise HttpError(404, "User not found")
-            
+
             request.db_session.delete(user)
             request.db_session.commit()
 
@@ -380,7 +395,7 @@ class UploadDocumentView(BaseView):
             if file is None:
                 logger.error(f"Пользователь {self.user_id} не загрузил файл")
                 raise HttpError(400, "File not uploaded")
-            
+
             if check_extension_file(file.filename):
 
                 try:
@@ -419,9 +434,11 @@ class DocumentListView(BaseView):
     @jwt_required()
     def get(self):
         try:
-            documents = (request.db_session.query(Document)
-            .options(joinedload(Document.user))
-            .filter(Document.user_id == self.user_id)).all()
+            documents = (
+                request.db_session.query(Document)
+                .options(joinedload(Document.user))
+                .filter(Document.user_id == self.user_id)
+            ).all()
 
             if documents is False:
                 raise HttpError(404, "Documents not found")
@@ -438,7 +455,11 @@ class DocumentListView(BaseView):
 
         except SQLAlchemyError as e:
             logger.error(f"Ошибка получения списка документов: {e}")
-            self.handle_error(e, "Error processing getting list of documents", 500)
+            self.handle_error(
+                error=e,
+                message="Error processing getting list of documents",
+                status_code=500
+            )
 
 
 class DocumentGetPatchDeleteView(BaseView):
@@ -455,7 +476,7 @@ class DocumentGetPatchDeleteView(BaseView):
             )
             if document is None:
                 raise HttpError(404, "Document not found")
-            
+
             validation_data = DocumentSchemaResponse(
                 id=document.id,
                 name_file=document.name_file
@@ -465,11 +486,14 @@ class DocumentGetPatchDeleteView(BaseView):
 
         except SQLAlchemyError as e:
             self.handle_error(e, "Error processing getting document", 500)
-    
+
     @jwt_required()
     def patch(self, document_id: int):
         try:
-            logger.info(f"Пользователь {self.user_id} отправил данные {request.json}")
+            logger.info(
+                f"Пользователь {self.user_id}"
+                f"отправил данные {request.json}"
+            )
             validation_data = validate(
                 UpdateDocumentSchemaRequest,
                 **request.json
@@ -533,13 +557,13 @@ class DocumentCollectionStatisticsView(BaseView):
 
             # Получаем id коллекций, к которым принадлежит документ
             collection_ids = (
-                request.db_session.query(DocumentCollectionAssociation.c.collection_id)
-                .filter(DocumentCollectionAssociation.c.document_id == document.id)
+                request.db_session.query(DocCollAssoc.c.collection_id)
+                .filter(DocCollAssoc.c.document_id == document.id)
                 .all()
             )
             if collection_ids is False:
                 raise HttpError(404, "The document is not in the collection")
-            
+
             collection_ids = [coll_id[0] for coll_id in collection_ids]
 
             # Получаем документы из коллекции, кроме текущего
@@ -547,9 +571,16 @@ class DocumentCollectionStatisticsView(BaseView):
             for collection_id in collection_ids:
                 documents_in_collections = (
                     request.db_session.query(Document.data)
-                    .join(DocumentCollectionAssociation, Document.id == DocumentCollectionAssociation.c.document_id)
-                    .filter(DocumentCollectionAssociation.c.collection_id == collection_id)
-                    .where(Document.id != document_id)
+                    .join(
+                        DocCollAssoc,
+                        Document.id == DocCollAssoc.c.document_id
+                    )
+                    .filter(
+                        DocCollAssoc.c.collection_id == collection_id
+                    )
+                    .where(
+                        Document.id != document_id
+                    )
                     .all()
                 )
                 documents_list = [doc[0] for doc in documents_in_collections]
@@ -569,7 +600,116 @@ class DocumentCollectionStatisticsView(BaseView):
             return jsonify(documents_statistic), 200
 
         except SQLAlchemyError as e:
-            self.handle_error(e, "Error processing getting list of documents", 500)
+            self.handle_error(
+                error=e,
+                message="Error processing getting list of documents",
+                status_code=500
+            )
+
+
+class DocumentCollectionCreateDeleteView(BaseView):
+    """
+    Класс для добавления и удаления документа в(из) коллекцию(ии)
+    """
+
+    @jwt_required()
+    def post(self, collection_id: int, document_id: int):
+        try:
+            document = get_document_user_by_id(
+                user_id=self.user_id,
+                document_id=document_id
+            )
+            if document is None:
+                raise HttpError(404, "Document not found")
+
+            collection = get_collection_user_by_id(
+                user_id=self.user_id,
+                collection_id=collection_id
+            )
+            if collection is None:
+                raise HttpError(404, "Collection not found")
+
+            add_document_to_collection(
+                collection_id=collection_id,
+                document_id=document_id
+            )
+
+            return jsonify({
+                "message": "Document added to collection successfully"
+            }), 200
+
+        except SQLAlchemyError as e:
+            self.handle_error(
+                error=e,
+                message="Error processing adding document to collection",
+                status_code=500
+            )
+
+    @jwt_required()
+    def delete(self, collection_id: int, document_id: int):
+        try:
+            document = get_document_user_by_id(
+                user_id=self.user_id,
+                document_id=document_id
+            )
+            if document is None:
+                raise HttpError(404, "Document not found")
+
+            collection = get_collection_user_by_id(
+                user_id=self.user_id,
+                collection_id=collection_id
+            )
+            if collection is None:
+                raise HttpError(404, "Collection not found")
+
+            delete_document_from_collection(
+                collection_id=collection_id,
+                document_id=document_id
+            )
+
+            return jsonify({
+                "message": "Document deleted from collection successfully"
+            }), 204
+
+        except SQLAlchemyError as e:
+            self.handle_error(
+                error=e,
+                message="Error processing deleting document from collection",
+                status_code=500
+            )
+
+
+class DocumentHuffmanView(BaseView):
+    """
+    Класс для кодирования текста с помощью кода Хаффмана
+    """
+
+    @jwt_required()
+    def get(self, document_id: int):
+        try:
+            document = get_document_user_by_id(
+                user_id=self.user_id,
+                document_id=document_id
+            )
+            if document is None:
+                raise HttpError(
+                    status_code=404,
+                    message=f"Document with id {document_id} has no data"
+                )
+
+            encoded_data, code_table = huffman_encode(document.data)
+
+            return jsonify({
+                "encoded_data": encoded_data,
+                "code_table": code_table
+            }), 200
+
+        except SQLAlchemyError as e:
+            self.handle_error(
+                error=e,
+                message="Error processing encoding document",
+                status_code=500
+            )
 
 
 class CollectionDocumentListView(BaseView):
@@ -580,13 +720,15 @@ class CollectionDocumentListView(BaseView):
     @jwt_required()
     def get(self):
         try:
-            collections = (request.db_session.query(Collection)
-            .options(joinedload(Collection.documents))
-            .filter(Collection.user_id == self.user_id)).all()
+            collections = (
+                request.db_session.query(Collection)
+                .options(joinedload(Collection.documents))
+                .filter(Collection.user_id == self.user_id)
+            ).all()
 
             if not collections:
                 raise HttpError(404, "Collections not found")
-            
+
             # Проходим по коллекциям, валидируем данные и добавляем в список
             collections_list = []
             for collection in collections:
@@ -608,13 +750,21 @@ class CollectionDocumentListView(BaseView):
 
         except SQLAlchemyError as e:
             logger.error(f"Ошибка получения списка коллекций: {e}")
-            self.handle_error(e, "Error processing getting list of collections", 500)
+            self.handle_error(
+                error=e,
+                message="Error processing getting list of collections",
+                status_code=500
+            )
 
     @jwt_required()
     def post(self):
 
-        logger.info(f"Пользователь {self.user_id} отправил данные {request.json}")
-        validation_data = validate(CollectionCreateSchemaRequest, **request.json)
+        logger.info(f"Пользователь {self.user_id}"
+                    f"отправил данные {request.json}")
+        validation_data = validate(
+            CollectionCreateSchemaRequest,
+            **request.json
+        )
 
         if isinstance(validation_data, CollectionCreateSchemaRequest):
             try:
@@ -629,9 +779,17 @@ class CollectionDocumentListView(BaseView):
                     }), 201
 
             except IntegrityError as e:
-                self.handle_error(e, "Collection already exists", 400)
+                self.handle_error(
+                    error=e,
+                    message="Collection already exists",
+                    status_code=400
+                )
             except SQLAlchemyError as e:
-                self.handle_error(e, "Error processing creating collection", 500)
+                self.handle_error(
+                    error=e,
+                    message="Error processing creating collection",
+                    status_code=500
+                )
 
         else:
             logger.error(f"Ошибка валидации данных {validation_data}")
@@ -647,8 +805,8 @@ class CollectionView(BaseView):
     def get(self, collection_id: int):
         try:
             document_ids = (
-                request.db_session.query(DocumentCollectionAssociation.c.document_id)
-                .filter(DocumentCollectionAssociation.c.collection_id == collection_id)
+                request.db_session.query(DocCollAssoc.c.document_id)
+                .filter(DocCollAssoc.c.collection_id == collection_id)
             ).all()
 
             if document_ids is None:
@@ -694,7 +852,7 @@ class CollectionStatisticsView(BaseView):
                 .options(joinedload(Document.collections))
                 .filter(Document.collections.any(Collection.id == collection_id))
             ).all()
-            
+
             if documents is False:
                 raise HttpError(
                     404,
@@ -713,78 +871,6 @@ class CollectionStatisticsView(BaseView):
         except SQLAlchemyError as e:
             logger.error(f"Ошибка получения коллекции: {e}")
             self.handle_error(e, "Error processing getting collection", 500)
-
-
-class DocumentCollectionCreateDeleteView(BaseView):
-    """
-    Класс для добавления и удаления документа в(из) коллекцию(ии)
-    """
-
-    @jwt_required()
-    def post(self, collection_id: int, document_id: int):
-        try:
-            document = get_document_user_by_id(
-                user_id=self.user_id,
-                document_id=document_id
-            )
-            if document is None:
-                raise HttpError(404, "Document not found")
-
-            collection = get_collection_user_by_id(
-                user_id=self.user_id,
-                collection_id=collection_id
-            )
-            if collection is None:
-                raise HttpError(404, "Collection not found")
-
-            add_document_to_collection(
-                collection_id=collection_id,
-                document_id=document_id
-            )
-
-            return jsonify({
-                "message": "Document added to collection successfully"
-            }), 200
-
-        except SQLAlchemyError as e:
-            self.handle_error(
-                error=e,
-                message="Error processing adding document to collection",
-                status_code=500
-            )
-    
-    @jwt_required()
-    def delete(self, collection_id: int, document_id: int):
-        try:
-            document = get_document_user_by_id(
-                user_id=self.user_id,
-                document_id=document_id
-            )
-            if document is None:
-                raise HttpError(404, "Document not found")
-
-            collection = get_collection_user_by_id(
-                user_id=self.user_id,
-                collection_id=collection_id
-            )
-            if collection is None:
-                raise HttpError(404, "Collection not found")
-
-            delete_document_from_collection(
-                collection_id=collection_id,
-                document_id=document_id
-            )
-
-            return jsonify({
-                "message": "Document deleted from collection successfully"
-            }), 204
-
-        except SQLAlchemyError as e:
-            self.handle_error(
-                error=e,
-                message="Error processing deleting document from collection",
-                status_code=500
-            )
 
 
 app.add_url_rule(
@@ -832,6 +918,14 @@ app.add_url_rule(
     view_func=DocumentCollectionStatisticsView.as_view("document_statistics")
 )
 app.add_url_rule(
+    f"{API_VERSION_URL_PREFIX_V1}/documents/<int:document_id>/huffman",
+    view_func=DocumentHuffmanView.as_view("document_huffman")
+)
+app.add_url_rule(
+    f"{API_VERSION_URL_PREFIX_V1}/collections/<int:collection_id>/<int:document_id>",
+    view_func=DocumentCollectionCreateDeleteView.as_view("collection_document_add_delete")
+)
+app.add_url_rule(
     f"{API_VERSION_URL_PREFIX_V1}/collections/",
     view_func=CollectionDocumentListView.as_view("collections")
 )
@@ -843,10 +937,10 @@ app.add_url_rule(
     f"{API_VERSION_URL_PREFIX_V1}/collections/<int:collection_id>/statistics",
     view_func=CollectionStatisticsView.as_view("collection_statistics")
 )
-app.add_url_rule(
-    f"{API_VERSION_URL_PREFIX_V1}/collections/<int:collection_id>/<int:document_id>",
-    view_func=DocumentCollectionCreateDeleteView.as_view("collection_document_add_delete")
-)
+
 
 if __name__ == "__main__":
-    app.run(host=os.getenv("FLASK_API_HOST", "localhost"), port=os.getenv("FLASK_API_PORT", 5050))
+    app.run(
+        host=os.getenv("FLASK_API_HOST"),
+        port=os.getenv("FLASK_API_PORT")
+    )

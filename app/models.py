@@ -3,6 +3,7 @@ from sqlalchemy import ForeignKey, Table, Column
 from flask_login import UserMixin
 from datetime import datetime
 
+
 class Base(DeclarativeBase):
     __abstract__ = True
 
@@ -16,8 +17,16 @@ class Base(DeclarativeBase):
 DocumentCollectionAssociation = Table(
     "DocumentCollectionAssociation",
     Base.metadata,
-    Column("document_id", ForeignKey("Documents.id", ondelete="SET_NULL"), primary_key=True),
-    Column("collection_id", ForeignKey("Collections.id", ondelete="CASCADE"), primary_key=True)
+    Column(
+        "document_id",
+        ForeignKey("Documents.id", ondelete="SET_NULL"),
+        primary_key=True
+    ),
+    Column(
+        "collection_id",
+        ForeignKey("Collections.id", ondelete="CASCADE"),
+        primary_key=True
+    )
 )
 
 
@@ -148,4 +157,3 @@ class LoginMetric(Base):
             f"id={self.id},"
             f"user_id={self.user_id})"
         )
-

@@ -6,7 +6,10 @@ from sqlalchemy import insert, delete
 from sqlalchemy.orm.exc import NoResultFound
 
 
-def get_collection_user_by_id(user_id: int, collection_id: int) -> Collection | None:
+def get_collection_user_by_id(
+    user_id: int,
+    collection_id: int
+) -> Collection | None:
     """
     Функция для получения коллекции по id у пользователя
     """
@@ -24,6 +27,7 @@ def get_collection_user_by_id(user_id: int, collection_id: int) -> Collection | 
         logger.error(f"Ошибка получения коллекции: {e}")
         raise e
 
+
 def add_document_to_collection(collection_id: int, document_id: int) -> None:
     """
     Функция для добавления документа в коллекцию
@@ -33,7 +37,7 @@ def add_document_to_collection(collection_id: int, document_id: int) -> None:
             collection_id=collection_id,
             document_id=document_id
         )
-        
+
         # Выполняем вставку
         request.db_session.execute(doc_in_collection)
         request.db_session.commit()
@@ -42,6 +46,7 @@ def add_document_to_collection(collection_id: int, document_id: int) -> None:
         request.db_session.rollback()
         logger.error(f"Ошибка добавления документа в коллекцию: {e}")
         raise e
+
 
 def add_collection(user_id: int, name: str) -> Collection:
     """
@@ -59,14 +64,20 @@ def add_collection(user_id: int, name: str) -> Collection:
 
     except IntegrityError as e:
         request.db_session.rollback()
-        logger.error(f"Коллекция с именем {name_collection} уже существует")
+        logger.error(f"Коллекция с именем {name} уже существует")
         raise e
     except SQLAlchemyError as e:
         request.db_session.rollback()
-        logger.error(f"Ошибка добавления коллекции в БД: {name_collection}")
+        logger.error(
+            f"Ошибка добавления коллекции в БД: {name}"
+        )
         raise e
 
-def delete_document_from_collection(collection_id: int, document_id: int) -> bool:
+
+def delete_document_from_collection(
+    collection_id: int,
+    document_id: int
+) -> bool:
     """
     Функция для удаления документа из коллекции
     """
@@ -91,12 +102,16 @@ def delete_document_from_collection(collection_id: int, document_id: int) -> boo
         logger.error(f"Ошибка удаления документа из коллекции: {e}")
         raise e
 
+
 def delete_collection(user_id: int, collection_id: int) -> bool:
     """
     Функция для удаления коллекции
     """
     try:
-        collection = get_collection_user_by_id(user_id=user_id, collection_id=collection_id)
+        collection = get_collection_user_by_id(
+            user_id=user_id,
+            collection_id=collection_id
+        )
         if collection is None:
             return None
 

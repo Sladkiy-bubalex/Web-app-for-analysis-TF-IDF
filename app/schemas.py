@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator, ValidationError, EmailStr
 from config import logger
 from typing import List
 
+
 def validate(schema_cls: type, **kwargs):
     try:
         check_validate = schema_cls(**kwargs)
@@ -15,6 +16,7 @@ class Base(BaseModel):
     """Базовая схема"""
 
     id: int
+
 
 class UserSchema(BaseModel):
     email: EmailStr

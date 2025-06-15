@@ -1,4 +1,6 @@
 import pandas as pd
+import heapq
+from collections import Counter, deque
 
 from config import logger
 from models import Document
@@ -16,6 +18,91 @@ from docx import Document as Docx
 from PyPDF2 import PdfReader
 
 
+class Node:
+    """
+    Класс для представления узла дерева Хаффмана
+    """
+    def __init__(self, char, freq):
+        self.char = char
+        self.freq = freq
+        self.left = None
+        self.right = None
+
+    def __lt__(self, other):
+        """
+        Переопределение оператора < для сравнения узлов по частоте
+        """
+        return self.freq < other.freq
+
+
+def huffman_tree(text: str) -> Node:
+    """
+    Функция для создания дерева Хаффмана
+    """
+
+    # Подсчет частоты символов и создание приоритетной очереди
+    priority_queue = [Node(char, freq) for char, freq in Counter(text).items()]
+    heapq.heapify(priority_queue)
+
+    while len(priority_queue) > 1:
+        left = heapq.heappop(priority_queue)
+        right = heapq.heappop(priority_queue)
+
+        merged = Node(None, left.freq + right.freq)
+        merged.left = left
+        merged.right = right
+
+        heapq.heappush(priority_queue, merged)
+
+    return priority_queue[0]
+
+
+def huffman_code_table(huffman_tree: Node) -> dict[str, str]:
+    """
+    Функция для создания таблицы кодов Хаффмана
+
+    Args:
+        huffman_tree: Дерево Хаффмана
+
+    Returns:
+        dict[str, str]: Таблица кодов Хаффмана
+    """
+
+    code_table = {}
+    queue = deque([(huffman_tree, "")])
+
+    while queue:
+        node, code = queue.popleft()
+
+        if node.char is not None:
+            code_table[node.char] = code
+            continue
+
+        if node.left:
+            queue.append((node.left, code + "0"))
+        if node.right:
+            queue.append((node.right, code + "1"))
+
+    return code_table
+
+
+def huffman_encode(text: str) -> tuple[str, dict[str, str]]:
+    """
+    Функция для кодирования текста с помощью таблицы Хаффмана
+
+    Args:
+        text: Текст для кодирования
+
+    Returns:
+        tuple[str, dict[str, str]]:
+        Кодированная строка и таблица кодов Хаффмана
+    """
+    tree = huffman_tree(text)
+    code_table = huffman_code_table(tree)
+    result = "".join(code_table[char] for char in text)
+    return result, code_table
+
+
 def process_text(text: str) -> pd.DataFrame:
     """
     Функция для обработки текста и вычисления TF-IDF
@@ -24,7 +111,11 @@ def process_text(text: str) -> pd.DataFrame:
     # Токенизация и удаление стоп-слов
     stop_words = set(stopwords.words("russian"))
     word_tokens = word_tokenize(text)
-    filtered_tokens = ' '.join([word.lower() for word in word_tokens if word.lower() not in stop_words and word.isalnum()])
+    filtered_tokens = ' '.join([
+        word.lower() for word in word_tokens if (
+            word.lower() not in stop_words and word.isalnum()
+        )
+    ])
 
     # Получение слов и их TF-IDF значения
     vectorizer = TfidfVectorizer()
@@ -50,32 +141,38 @@ def process_text(text: str) -> pd.DataFrame:
 
     return df_sorted
 
-def calculate_tf_idf_for_document(document: str, collection: list[str]) -> pd.DataFrame:
+
+def calculate_tf_idf_for_document(
+    document: str,
+    collection: list[str]
+) -> pd.DataFrame:
     """
-    Вычисляет TF для документа и IDF для объединенного корпуса текстов из коллекции.
+    Вычисляет TF для документа и IDF
+    для объединенного корпуса текстов из коллекции.
 
     Args:
         document: Текст документа (строка).
         collection: Список текстов в коллекции.
 
     Returns:
-        Pandas DataFrame с 50 наибольшими TF и IDF или None, если входные данные некорректны.
+        DataFrame с 50 наибольшими TF и IDF или None,
+        если входные данные некорректны.
     """
     stop_words = set(stopwords.words("russian"))
 
     # Предобработка документа
     processed_document = ' '.join([
-        word.lower() for word in word_tokenize(document) 
+        word.lower() for word in word_tokenize(document)
         if word.lower() not in stop_words and word.isalnum()
     ])
-    
+
     if not processed_document:
         return None
 
     # Предобработка всех документов в коллекции
     processed_all_documents = [
         ' '.join([
-            word.lower() for word in word_tokenize(text) 
+            word.lower() for word in word_tokenize(text)
             if word.lower() not in stop_words and word.isalnum()
         ]) for text in collection
     ]
@@ -87,7 +184,7 @@ def calculate_tf_idf_for_document(document: str, collection: list[str]) -> pd.Da
 
     # Вычисляем IDF для всех документов в коллекции
     vectorizer.fit(processed_all_documents)
-    
+
     # Получаем IDF значения и названия признаков
     idf_values = vectorizer.idf_
     feature_names = vectorizer.get_feature_names_out()
@@ -101,7 +198,7 @@ def calculate_tf_idf_for_document(document: str, collection: list[str]) -> pd.Da
         "word": feature_names,
         "idf": idf_values,
     })
-    
+
     tf_series = pd.Series(tf_scores, index=feature_names)
     result_df['tf'] = result_df['word'].map(tf_series).fillna(0)
 
@@ -114,6 +211,7 @@ def calculate_tf_idf_for_document(document: str, collection: list[str]) -> pd.Da
     # Возвращаем топ 50 слов
     return filtered_df.reset_index(drop=True).head(50)
 
+
 def reading_file(file: FileStorage) -> str:
     """
     Функция для чтения файла
@@ -123,7 +221,7 @@ def reading_file(file: FileStorage) -> str:
         if file_extension == "docx":
             doc = Docx(file)
             text = [para.text for para in doc.paragraphs]
-            return text
+            return " ".join(text)
 
         elif file_extension == "txt":
             text = file.read().decode("utf-8")
@@ -132,10 +230,11 @@ def reading_file(file: FileStorage) -> str:
         elif file_extension == "pdf":
             reader = PdfReader(file)
             text = [page.extract_text() for page in reader.pages]
-            return text
+            return " ".join(text)
     except Exception as e:
         logger.error(f"Ошибка чтения файла {file.filename}: {e}")
         raise e
+
 
 def add_document(name_file: str, text: str, user_id: int) -> Document:
     """
@@ -161,6 +260,7 @@ def add_document(name_file: str, text: str, user_id: int) -> Document:
         logger.error(f"Ошибка добавления файла в БД: {name_file}")
         raise e
 
+
 def get_document_user_by_id(user_id: int, document_id: int) -> Document | None:
     """
     Функция для получения данных документа по id у пользователя
@@ -179,12 +279,21 @@ def get_document_user_by_id(user_id: int, document_id: int) -> Document | None:
         logger.error(f"Ошибка получения документа: {e}")
         raise e
 
-def update_document(user_id: int, document_id: int, name_file=None, new_text=None) -> Document:
+
+def update_document(
+        user_id: int,
+        document_id: int,
+        name_file=None,
+        new_text=None
+) -> Document:
     """
     Функция для обновления данных документа
     """
     try:
-        document = get_document_user_by_id(user_id=user_id, document_id=document_id)
+        document = get_document_user_by_id(
+            user_id=user_id,
+            document_id=document_id
+        )
         if document is None:
             return None
 
@@ -201,12 +310,16 @@ def update_document(user_id: int, document_id: int, name_file=None, new_text=Non
         logger.error(f"Ошибка обновления документа: {e}")
         raise e
 
+
 def delete_document(user_id: int, document_id: int) -> None | bool:
     """
     Функция для удаления документа
     """
     try:
-        document = get_document_user_by_id(user_id=user_id, document_id=document_id)
+        document = get_document_user_by_id(
+            user_id=user_id,
+            document_id=document_id
+        )
         if document is None:
             return None
 
